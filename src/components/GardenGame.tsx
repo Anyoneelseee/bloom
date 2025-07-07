@@ -32,16 +32,31 @@ const GardenGame: React.FC = () => {
   });
   const [particles, setParticles] = useState<Particle[]>([]);
   const [bloomScale, setBloomScale] = useState(0);
+  const [stageSize, setStageSize] = useState({ width: 400, height: 400 });
   const stages = ['Seed', 'Sprout', 'Bud', 'Bloom'];
   const animationFrameRef = useRef<number | null>(null);
   const pulseRef = useRef<number>(0);
 
-  // Calculate stem height based on stage and growth
+  // Responsive canvas size
+  useEffect(() => {
+    const updateStageSize = () => {
+      const width = Math.min(window.innerWidth * 0.9, 400); // 90% of viewport width, max 400px
+      const height = width; // Maintain square canvas
+      setStageSize({ width, height });
+    };
+
+    updateStageSize();
+    window.addEventListener('resize', updateStageSize);
+    return () => window.removeEventListener('resize', updateStageSize);
+  }, []);
+
+  // Calculate stem height based on stage and growth, scaled to stage size
   const getStemHeight = (stageIndex: number, growth: number): number => {
-    if (stageIndex === 0) return (growth / 100) * 30;
-    if (stageIndex === 1) return 30 + (growth / 100) * 30;
-    if (stageIndex === 2) return 60 + (growth / 100) * 60;
-    return 120 + (growth / 100) * 30;
+    const baseHeight = stageSize.height * 0.075; // Base unit scaled to canvas
+    if (stageIndex === 0) return (growth / 100) * baseHeight;
+    if (stageIndex === 1) return baseHeight + (growth / 100) * baseHeight;
+    if (stageIndex === 2) return baseHeight * 2 + (growth / 100) * (baseHeight * 2);
+    return baseHeight * 3 + (growth / 100) * baseHeight;
   };
 
   // Animation for particles and bloom effect
@@ -107,17 +122,17 @@ const GardenGame: React.FC = () => {
       const stemTop = baseY - prev.stemHeight;
       setParticles((prevParticles) => [
         ...prevParticles,
-        { x: centerX - 20, y: stemTop, opacity: 1, vx: -1, vy: -1 },
-        { x: centerX + 20, y: stemTop, opacity: 1, vx: 1, vy: -1 },
-        { x: centerX, y: stemTop - 20, opacity: 1, vx: 0, vy: -2 },
+        { x: centerX - stageSize.width * 0.05, y: stemTop, opacity: 1, vx: -1, vy: -1 },
+        { x: centerX + stageSize.width * 0.05, y: stemTop, opacity: 1, vx: 1, vy: -1 },
+        { x: centerX, y: stemTop - stageSize.width * 0.05, opacity: 1, vx: 0, vy: -2 },
       ]);
       return prev;
     });
   };
 
-  // Center of canvas
-  const centerX = 200;
-  const baseY = 300;
+  // Center of canvas, scaled to stage size
+  const centerX = stageSize.width / 2;
+  const baseY = stageSize.height * 0.75;
 
   // Pulsating scale
   const pulse = Math.sin(pulseRef.current) * 0.1 + 0.9;
@@ -161,7 +176,7 @@ const GardenGame: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gray-900 flex items-center justify-center p-4 sm:p-8 lg:p-12">
+    <div className="min-h-screen relative overflow-hidden bg-gray-900 flex flex-col items-center justify-center p-4 sm:p-8 lg:p-12">
       {/* Animated Web3 Background */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 via-blue-900/50 to-pink-900/50 animate-gradient"></div>
@@ -187,7 +202,7 @@ const GardenGame: React.FC = () => {
       <div className="absolute top-4 left-4 z-20">
         <Link href="/">
           <Button
-            className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white text-lg px-6 py-2 rounded-full font-poppins transform hover:scale-105 transition-transform duration-300 shadow-lg"
+            className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white text-base sm:text-lg px-4 sm:px-6 py-1 sm:py-2 rounded-full font-poppins transform hover:scale-105 transition-transform duration-300 shadow-lg"
           >
             Return
           </Button>
@@ -195,15 +210,15 @@ const GardenGame: React.FC = () => {
       </div>
 
       {/* Instruction Card */}
-      <Card className="absolute left-4 top-1/2 -translate-y-1/2 w-64 bg-white/10 backdrop-blur-md border border-pink-200/20 shadow-xl animate-fade-in">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg sm:text-xl text-white font-bold font-poppins drop-shadow-md">
+      <Card className="sm:absolute sm:left-4 sm:top-1/2 sm:-translate-y-1/2 w-full sm:w-56 md:w-64 mb-4 sm:mb-0 bg-white/10 backdrop-blur-md border border-pink-200/20 shadow-xl animate-fade-in">
+        <CardHeader className="pb-1 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg md:text-xl text-white font-bold font-poppins drop-shadow-md">
             How to Play
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-1">
+        <CardContent className="pt-0 sm:pt-1">
           <p className="text-xs sm:text-sm text-gray-200 font-poppins leading-relaxed">
-            Grow a rose from seed to bloom! Click <span className="font-semibold">&quot;Water&quot;</span> to nurture it through <span className="font-semibold">Seed</span>, <span className="font-semibold">Sprout</span>, <span className="font-semibold">Bud</span>, and <span className="font-semibold">Bloom</span> stages. Each click adds growth, and animations show progress.  <span className="font-semibold">&quot; Rush na gawa lang to!! HAHAHAHAHAH&quot;</span> .
+            Grow a rose from seed to bloom! Click <span className="font-semibold">&quot;Water&quot;</span> to nurture it through <span className="font-semibold">Seed</span>, <span className="font-semibold">Sprout</span>, <span className="font-semibold">Bud</span>, and <span className="font-semibold">Bloom</span> stages. Each click adds growth, and animations show progress. <span className="font-semibold">&quot;Rush na gawa lang to!! HAHAHAHAHAH&quot;</span>.
           </p>
         </CardContent>
       </Card>
@@ -211,14 +226,14 @@ const GardenGame: React.FC = () => {
       {/* Main Content */}
       <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border border-pink-200/20 shadow-xl animate-fade-in">
         <CardHeader>
-          <CardTitle className="text-3xl sm:text-4xl text-white font-bold font-poppins drop-shadow-md">
-            Rose
+          <CardTitle className="text-2xl sm:text-3xl md:text-4xl text-white font-bold font-poppins drop-shadow-md">
+            Rose Garden
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-4">
           <Stage
-            width={400}
-            height={400}
+            width={stageSize.width}
+            height={stageSize.height}
             ref={stageRef}
             className="border border-pink-200/30 mb-4 rounded-lg shadow-lg"
           >
@@ -227,51 +242,51 @@ const GardenGame: React.FC = () => {
               <Rect
                 x={0}
                 y={0}
-                width={400}
-                height={400}
+                width={stageSize.width}
+                height={stageSize.height}
                 fillLinearGradientStartPoint={{ x: 0, y: 0 }}
-                fillLinearGradientEndPoint={{ x: 400, y: 400 }}
+                fillLinearGradientEndPoint={{ x: stageSize.width, y: stageSize.height }}
                 fillLinearGradientColorStops={[0, '#1a0933', 1, '#2a1b4a']}
               />
               {/* Background flowers */}
               {Array.from({ length: 10 }).map((_, i) => (
                 <Circle
                   key={i}
-                  x={(i * 50 + Math.sin(pulseRef.current + i) * 20) % 400}
-                  y={(i * 40 + Math.cos(pulseRef.current + i) * 20) % 400}
-                  radius={5}
+                  x={(i * (stageSize.width / 8) + Math.sin(pulseRef.current + i) * 20) % stageSize.width}
+                  y={(i * (stageSize.height / 10) + Math.cos(pulseRef.current + i) * 20) % stageSize.height}
+                  radius={stageSize.width * 0.0125}
                   fill={`rgba(196, 117, 160, ${0.3 * pulse})`}
                 />
               ))}
               {/* Thought bubble */}
               <Rect
-                x={60}
-                y={50}
-                width={160}
-                height={60}
-                fillLinearGradientStartPoint={{ x: 10, y: 10 }}
-                fillLinearGradientEndPoint={{ x: 10, y: 50 }}
+                x={stageSize.width * 0.15}
+                y={stageSize.height * 0.125}
+                width={stageSize.width * 0.4}
+                height={stageSize.height * 0.15}
+                fillLinearGradientStartPoint={{ x: stageSize.width * 0.025, y: stageSize.height * 0.025 }}
+                fillLinearGradientEndPoint={{ x: stageSize.width * 0.025, y: stageSize.height * 0.125 }}
                 fillLinearGradientColorStops={[0, 'rgba(255, 255, 255, 0.9)', 1, 'rgba(230, 230, 230, 0.8)']}
-                cornerRadius={10}
+                cornerRadius={stageSize.width * 0.025}
                 shadowColor={`rgba(196, 117, 160, ${pulse})`}
                 shadowBlur={5 * pulse}
                 scaleX={pulse}
                 scaleY={pulse}
               />
               <Path
-                x={30}
-                y={50}
+                x={stageSize.width * 0.075}
+                y={stageSize.height * 0.125}
                 data={thoughtTailPath}
                 fill="rgba(255, 255, 255, 0.9)"
                 scaleX={0.5 * pulse}
                 scaleY={0.5 * pulse}
               />
               <Text
-                x={60}
-                y={55}
-                width={140}
+                x={stageSize.width * 0.15}
+                y={stageSize.height * 0.1375}
+                width={stageSize.width * 0.35}
                 text={thoughtMessages[flower.stage]}
-                fontSize={14}
+                fontSize={stageSize.width * 0.035}
                 fontFamily="'Poppins', sans-serif"
                 fill="#222"
                 align="center"
@@ -284,9 +299,9 @@ const GardenGame: React.FC = () => {
               {flower.stage === 'Seed' && (
                 <>
                   <Rect
-                    x={centerX - 5}
+                    x={centerX - stageSize.width * 0.0125}
                     y={baseY - flower.stemHeight}
-                    width={10}
+                    width={stageSize.width * 0.025}
                     height={flower.stemHeight}
                     fill="#4caf50"
                     shadowColor={`rgba(196, 117, 160, ${pulse})`}
@@ -298,7 +313,7 @@ const GardenGame: React.FC = () => {
                       <Circle
                         x={centerX}
                         y={baseY}
-                        radius={10 * pulse}
+                        radius={stageSize.width * 0.025 * pulse}
                         fill="#c475a0"
                         shadowColor={`rgba(196, 117, 160, ${pulse})`}
                         shadowBlur={10 * pulse}
@@ -322,9 +337,9 @@ const GardenGame: React.FC = () => {
               {flower.stage === 'Sprout' && (
                 <>
                   <Rect
-                    x={centerX - 5}
+                    x={centerX - stageSize.width * 0.0125}
                     y={baseY - flower.stemHeight}
-                    width={10}
+                    width={stageSize.width * 0.025}
                     height={flower.stemHeight}
                     fill="#4caf50"
                     shadowColor={`rgba(196, 117, 160, ${pulse})`}
@@ -332,33 +347,33 @@ const GardenGame: React.FC = () => {
                     opacity={0.9}
                   />
                   <Path
-                    x={centerX - 5}
-                    y={baseY - flower.stemHeight + 10}
+                    x={centerX - stageSize.width * 0.0125}
+                    y={baseY - flower.stemHeight + stageSize.height * 0.025}
                     data={leafPath}
                     fill="#4caf50"
                     scaleX={0.6 * pulse}
                     scaleY={0.6 * pulse}
                     rotation={45}
-                    offsetX={-5}
+                    offsetX={-stageSize.width * 0.0125}
                   />
                   <Path
-                    x={centerX + 5}
-                    y={baseY - flower.stemHeight + 10}
+                    x={centerX + stageSize.width * 0.0125}
+                    y={baseY - flower.stemHeight + stageSize.height * 0.025}
                     data={leafPath}
                     fill="#4caf50"
                     scaleX={0.6 * pulse}
                     scaleY={0.6 * pulse}
                     rotation={-45}
-                    offsetX={5}
+                    offsetX={stageSize.width * 0.0125}
                   />
                 </>
               )}
               {flower.stage === 'Bud' && (
                 <>
                   <Rect
-                    x={centerX - 5}
+                    x={centerX - stageSize.width * 0.0125}
                     y={baseY - flower.stemHeight}
-                    width={10}
+                    width={stageSize.width * 0.025}
                     height={flower.stemHeight}
                     fill="#4caf50"
                     shadowColor={`rgba(196, 117, 160, ${pulse})`}
@@ -366,24 +381,24 @@ const GardenGame: React.FC = () => {
                     opacity={0.9}
                   />
                   <Path
-                    x={centerX - 5}
-                    y={baseY - flower.stemHeight + 30}
+                    x={centerX - stageSize.width * 0.0125}
+                    y={baseY - flower.stemHeight + stageSize.height * 0.075}
                     data={leafPath}
                     fill="#4caf50"
                     scaleX={0.7 * pulse}
                     scaleY={0.7 * pulse}
                     rotation={45}
-                    offsetX={-5}
+                    offsetX={-stageSize.width * 0.0125}
                   />
                   <Path
-                    x={centerX + 5}
-                    y={baseY - flower.stemHeight + 30}
+                    x={centerX + stageSize.width * 0.0125}
+                    y={baseY - flower.stemHeight + stageSize.height * 0.075}
                     data={leafPath}
                     fill="#4caf50"
                     scaleX={0.7 * pulse}
                     scaleY={0.7 * pulse}
                     rotation={-45}
-                    offsetX={5}
+                    offsetX={stageSize.width * 0.0125}
                   />
                   {Array.from({ length: 4 }).map((_, i) => (
                     <Path
@@ -402,9 +417,9 @@ const GardenGame: React.FC = () => {
               {flower.stage === 'Bloom' && (
                 <>
                   <Rect
-                    x={centerX - 5}
+                    x={centerX - stageSize.width * 0.0125}
                     y={baseY - flower.stemHeight}
-                    width={10}
+                    width={stageSize.width * 0.025}
                     height={flower.stemHeight}
                     fill="#4caf50"
                     shadowColor={`rgba(196, 117, 160, ${pulse})`}
@@ -412,24 +427,24 @@ const GardenGame: React.FC = () => {
                     opacity={0.9}
                   />
                   <Path
-                    x={centerX - 5}
-                    y={baseY - flower.stemHeight + 30}
+                    x={centerX - stageSize.width * 0.0125}
+                    y={baseY - flower.stemHeight + stageSize.height * 0.075}
                     data={leafPath}
                     fill="#4caf50"
                     scaleX={0.8 * pulse}
                     scaleY={0.8 * pulse}
                     rotation={45}
-                    offsetX={-5}
+                    offsetX={-stageSize.width * 0.0125}
                   />
                   <Path
-                    x={centerX + 5}
-                    y={baseY - flower.stemHeight + 30}
+                    x={centerX + stageSize.width * 0.0125}
+                    y={baseY - flower.stemHeight + stageSize.height * 0.075}
                     data={leafPath}
                     fill="#4caf50"
                     scaleX={0.8 * pulse}
                     scaleY={0.8 * pulse}
                     rotation={-45}
-                    offsetX={5}
+                    offsetX={stageSize.width * 0.0125}
                   />
                   {/* Inner petals */}
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -442,7 +457,7 @@ const GardenGame: React.FC = () => {
                       scaleX={0.8 * bloomScale * pulse}
                       scaleY={1 * bloomScale * pulse}
                       rotation={i * 72}
-                      offsetY={-5}
+                      offsetY={-stageSize.height * 0.0125}
                     />
                   ))}
                   {/* Outer petals */}
@@ -456,13 +471,13 @@ const GardenGame: React.FC = () => {
                       scaleX={1 * bloomScale * pulse}
                       scaleY={1.2 * bloomScale * pulse}
                       rotation={i * 72 + 36}
-                      offsetY={-10}
+                      offsetY={-stageSize.height * 0.025}
                     />
                   ))}
                   <Circle
                     x={centerX}
                     y={baseY - flower.stemHeight}
-                    radius={8 * pulse}
+                    radius={stageSize.width * 0.02 * pulse}
                     fill="#ffd700"
                     shadowColor={`rgba(196, 117, 160, ${pulse})`}
                     shadowBlur={10 * pulse}
@@ -475,19 +490,19 @@ const GardenGame: React.FC = () => {
                   key={i}
                   x={p.x}
                   y={p.y}
-                  radius={5}
+                  radius={stageSize.width * 0.0125}
                   fill={`rgba(255, 255, 255, ${p.opacity})`}
                 />
               ))}
             </Layer>
           </Stage>
           <div className="flex flex-col items-center space-y-4 text-white font-poppins">
-            <p className="text-lg sm:text-xl">
+            <p className="text-base sm:text-lg md:text-xl">
               Stage: <span className="font-semibold">{flower.stage}</span>
             </p>
             <Button
               onClick={waterFlower}
-              className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white text-lg px-8 py-3 rounded-full font-poppins transform hover:scale-105 transition-transform duration-300 shadow-lg"
+              className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white text-base sm:text-lg px-6 sm:px-8 py-2 sm:py-3 rounded-full font-poppins transform hover:scale-105 transition-transform duration-300 shadow-lg"
             >
               Water
             </Button>
